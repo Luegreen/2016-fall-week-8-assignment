@@ -1,4 +1,4 @@
-console.log('8.3');
+console.log('8.0');
 
 var m = {t:100,r:100,b:100,l:100};
 var outerWidth = document.getElementById('canvas').clientWidth,
@@ -35,8 +35,8 @@ var axisY = d3.axisLeft()
 
 //Line generator
 var lineGenerator = d3.line()
-    .x(function(d){return scaleX(d.year)})
-    .y(function(d){return scaleY(d.value)})
+    .x(function(d){return scaleX(new Date(d.travelDate))})
+    .y(function(d){return scaleY(d.price)})
     .curve(d3.curveCardinal);
 
 d3.queue()
@@ -59,7 +59,10 @@ d3.queue()
             .style('color','white')
             .style('background',function(d){return scaleColor(d)})
             .style('border-color','white')
-            .on('click',function(d){
+            .on('click',function(d){ 
+            var tooltip = d3.select('.custom-tooltip');
+            tooltip.select('.title')
+            
                 //Hint: how do we filter flights for particular airlines?
                 //data.filter(...)
 
@@ -77,6 +80,7 @@ d3.queue()
 
     });
 
+
 function draw(rows){
     //IMPORTANT: data transformation
     var flightsByTravelDate = d3.nest().key(function(d){return d.travelDate})
@@ -89,11 +93,35 @@ function draw(rows){
     console.log(flightsByTravelDate);
 
     //Draw dots
+    var node = plot.selectAll('.flight')
+        .data(rows,function(d){return d.id});
+        
+
+    node.enter()
+        .append('circle').attr('class','flight')
+        .merge(node)
+        .attr('r',3)
+        .attr('cx',function(d){return scaleX(d.travelDate)})
+        .attr('cy',function(d){return scaleY(d.price)})
+        .style('fill',function(d){return scaleColor(d.airline)})
+        .style('fill-opacity',.75);
 
 
     //Draw <path>
+    
+    
+ plot.append('path')
+        .datum(rows)
+        .transition()
+        .attr('d',function(datum){
+            return lineGenerator(datum);
+        })
+        .style('fill','none')
+        .style('stroke-width','2px')
+        .style('stroke',function(datum){
+            return scaleColor(datum[0].item);
+        });
 }
-
 function parse(d){
 
     if( !airlines.has(d.airline) ){
