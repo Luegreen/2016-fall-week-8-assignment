@@ -99,8 +99,42 @@ function draw(rows){
         .data(rows,function(d){return d.id});
         
 
-    node.enter()
-        .append('circle').attr('class','flight')
+    var nodeEnter = node.enter()
+        .append('circle')
+        .attr('class','flight')
+        .on('click',function(d,i){
+            console.log(d);
+            console.log(i);
+            console.log(this);
+        })
+
+        .on('mouseenter',function(d){
+            var tooltip = d3.select('.custom-tooltip');
+            tooltip.select('.title')
+                .html(d.airline)
+            tooltip.select('.value')
+                .html('$' + d.price);
+
+            tooltip.transition().style('opacity',1);
+
+            d3.select(this).style('stroke-width','3px');
+        })
+        .on('mousemove',function(d){
+            var tooltip = d3.select('.custom-tooltip');
+            var xy = d3.mouse( d3.select('.container').node() );
+            tooltip
+                .style('left',xy[0]+40+'px')
+                .style('top',xy[1]-135+'px');
+        })
+        .on('mouseleave',function(d){
+            var tooltip = d3.select('.custom-tooltip');
+            tooltip.transition().style('opacity',0);
+
+            d3.select(this).style('stroke-width','0px');
+        });
+    
+// UPDATE + ENTER
+    nodeEnter
         .merge(node)
         .attr('r',3)
         .attr('cx',function(d){return scaleX(d.travelDate)})
