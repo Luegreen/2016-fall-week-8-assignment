@@ -35,8 +35,8 @@ var axisY = d3.axisLeft()
 
 //Line generator
 var lineGenerator = d3.line()
-    .x(function(d){return scaleX(new Date(d.travelDate))})
-    .y(function(d){return scaleY(d.price)})
+    .x(function(d){return scaleX(new Date(d.key))})
+    .y(function(d){return scaleY(d.averagePrice)})
     .curve(d3.curveCardinal);
 
 d3.queue()
@@ -83,6 +83,8 @@ d3.queue()
 
 function draw(rows){
     //IMPORTANT: data transformation
+    rows.sort(function(a,b){return a.travelDate - b.travelDate});
+    
     var flightsByTravelDate = d3.nest().key(function(d){return d.travelDate})
         .entries(rows);
 
@@ -111,7 +113,7 @@ function draw(rows){
     
     
  plot.append('path')
-        .datum(rows)
+        .datum(flightsByTravelDate)
         .transition()
         .attr('d',function(datum){
             return lineGenerator(datum);
@@ -136,3 +138,4 @@ function parse(d){
         id: d.id
     }
 }
+
