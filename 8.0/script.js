@@ -60,8 +60,10 @@ d3.queue()
             .style('background',function(d){return scaleColor(d)})
             .style('border-color','white')
             .on('click',function(d){ 
-            var tooltip = d3.select('.custom-tooltip');
-            tooltip.select('.title')
+ //this filter creates the action for the buttons.           
+            var dataFiltered = data.filter(function(t){return(d) == t.airline});
+				
+            draw(dataFiltered)
             
                 //Hint: how do we filter flights for particular airlines?
                 //data.filter(...)
@@ -75,6 +77,9 @@ d3.queue()
             .call(axisX);
         plot.append('g').attr('class','axis axis-y')
             .call(axisY);
+    
+        //Append <path>; this should only happen once
+        plot.append('path').attr('class','time-series');
 
         draw(data);
 
@@ -83,6 +88,8 @@ d3.queue()
 
 function draw(rows){
     //IMPORTANT: data transformation
+    
+    //this sort was key to getting rid of the scribbly line but only after I realized that I could use d.averagePrice and .key in the lineGenerator
     rows.sort(function(a,b){return a.travelDate - b.travelDate});
     
     var flightsByTravelDate = d3.nest().key(function(d){return d.travelDate})
@@ -95,13 +102,23 @@ function draw(rows){
     console.log(flightsByTravelDate);
 
     //Draw dots
+    //UPDATE
     var node = plot.selectAll('.flight')
         .data(rows,function(d){return d.id});
         
-
+    //Enter
     var nodeEnter = node.enter()
         .append('circle')
         .attr('class','flight')
+        .merge(node)
+        .attr('r',3)
+        .attr('cx',function(d){return scaleX(d.travelDate)})
+        .attr('cy',function(d){return scaleY(d.price)})
+        .style('fill',function(d){return scaleColor(d.airline)})
+        .style('fill-opacity',.75)
+    
+
+    //this whole section is the tooltip
         .on('click',function(d,i){
             console.log(d);
             console.log(i);
@@ -132,21 +149,15 @@ function draw(rows){
 
             d3.select(this).style('stroke-width','0px');
         });
-    
-// UPDATE + ENTER
-    nodeEnter
-        .merge(node)
-        .attr('r',3)
-        .attr('cx',function(d){return scaleX(d.travelDate)})
-        .attr('cy',function(d){return scaleY(d.price)})
-        .style('fill',function(d){return scaleColor(d.airline)})
-        .style('fill-opacity',.75);
+
+//Exit
+    node.exit().remove();
 
 
     //Draw <path>
     
     
- plot.append('path')
+ var pathLine = plot.select('.time-series')
         .datum(flightsByTravelDate)
         .transition()
         .attr('d',function(datum){
@@ -155,9 +166,11 @@ function draw(rows){
         .style('fill','none')
         .style('stroke-width','2px')
         .style('stroke',function(datum){
-            return scaleColor(datum[0].item);
+            return scaleColor(datum[0].values[0].airline);
         });
 }
+
+//Parse
 function parse(d){
 
     if( !airlines.has(d.airline) ){
